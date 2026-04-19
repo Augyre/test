@@ -29,6 +29,14 @@ function App() {
   const [productResults, setProductResults] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
 
+  const [searchPhoneInput, setSearchPhoneInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState('');
+  const [selectedPayboxId, setSelectedPayboxId] = useState('');
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState('');
+  const [selectedPriceTypeId, setSelectedPriceTypeId] = useState('');
+
   const handleConnect = async () => {
     if (!token) {
       alert('Введите токен');
@@ -84,27 +92,33 @@ function App() {
     ));
   };
 
-  const handleSearchClient = (e) => {
-    const inputValue = e.target.value;
-    setSearchPhone(inputValue);
+  const handleSearchClientChange = (e) => {
+    setSearchPhoneInput(e.target.value);
+  };
 
-    if (inputValue.length < 3) {
-      setSearchResults([]);
-      return;
-    }
+  const performClientSearch = () => {
 
     const clientsArray = Array.isArray(clients) ? clients : [];
     const filtered = clientsArray.filter((client) => {
       if (!client.phone) return false;
-      return client.phone.includes(inputValue);
+      return client.phone.includes(searchPhoneInput);
     });
 
     setSearchResults(filtered);
+    setSearchQuery(searchPhoneInput);
+
+  };
+
+  const handleSearchKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      performClientSearch();
+    }
   };
 
   const selectClient = (client) => {
     setSelectedClient(client);
-    setSearchPhone(client.phone);
+    setSearchPhoneInput(client.phone);
+    setSearchQuery(client.phone);
     setSearchResults([]);
   };
 
@@ -209,12 +223,9 @@ function App() {
 
       const requestBody = [orderData];
 
-      console.log('Отправляем массив заказов:', JSON.stringify(requestBody, null, 2));
-
       let orderSum = getTotalSum().toFixed(2);
 
       const result = await api.createSale(requestBody);
-      console.log('Заказ создан:', result);
 
       alert(
         `${conduct ? 'Продажа создана и проведена!' : 'Продажа создана!'}\n\n` +
@@ -311,12 +322,17 @@ function App() {
                   <input
                     type="text"
                     className='input'
-                    value={searchPhone}
-                    onChange={handleSearchClient}
+                    value={searchPhoneInput}
+                    onChange={handleSearchClientChange}
+                    onKeyPress={handleSearchKeyPress}
                     placeholder="+79990000000"
                     disabled={!isConnected}
                   />
-                  <button className='phone-submit'>
+                  <button
+                    className='phone-submit'
+                    onClick={performClientSearch}
+                    disabled={!isConnected}
+                  >
                     <svg className='gray' width="16" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="m21 21-4.34-4.34" />
                       <circle cx="11" cy="11" r="8" />
@@ -329,11 +345,17 @@ function App() {
                 <label>Найденный клиент</label>
                 {selectedClient ? (
                   <div className="selected-client">
-                    <span>{selectedClient.name}</span>
-                    <span className="gray">{selectedClient.phone}</span>
-                    <button onClick={() => setSelectedClient(null)}>✕</button>
+                    <div>
+                      <div className="client-name">{selectedClient.name || 'Без имени'}</div>
+                      <div className="client-phone">{selectedClient.phone || 'Нет телефона'}</div>
+                    </div>
+                    <button onClick={() => {
+                      setSelectedClient(null);
+                      setSearchPhoneInput('');
+                      setSearchResults([]);
+                    }}>✕</button>
                   </div>
-                ) : (
+                ) : searchResults.length > 0 ? (
                   <div className="search-results">
                     {searchResults.map(client => (
                       <div key={client.id} className="search-result-item" onClick={() => selectClient(client)}>
@@ -341,6 +363,10 @@ function App() {
                         <div className="client-phone">{client.phone || 'Нет телефона'}</div>
                       </div>
                     ))}
+                  </div>
+                ) : (
+                  <div className="gray" style={{ padding: '10px', textAlign: 'center' }}>
+                    Клиент не выбран
                   </div>
                 )}
               </div>
@@ -359,6 +385,7 @@ function App() {
                 className='card-list'
                 value={selectedOrganization?.id || ''}
                 onChange={(e) => {
+                  setSelectedOrganizationId(e.target.value);
                   const org = organizations.find(o => o.id === parseInt(e.target.value));
                   setSelectedOrganization(org);
                 }}
@@ -366,7 +393,9 @@ function App() {
               >
                 <option value="">Выберите организацию</option>
                 {organizations.map(org => (
-                  <option key={org.id} value={org.id}>{org.full_name ?? org.short_name}</option>
+                  <option key={org.id} value={org.id}>
+                    {selectedOrganization?.id === org.id ? org.id : org.short_name}
+                  </option>
                 ))}
               </select>
 
@@ -375,6 +404,7 @@ function App() {
                 className='card-list'
                 value={selectedPaybox?.id || ''}
                 onChange={(e) => {
+                  setSelectedPayboxId(e.target.value);
                   const box = pboxes.find(p => p.id === parseInt(e.target.value));
                   setSelectedPaybox(box);
                 }}
@@ -382,7 +412,7 @@ function App() {
               >
                 <option value="">Выберите счёт</option>
                 {pboxes.map(box => (
-                  <option key={box.id} value={box.id}>{box.name}</option>
+                  <option key={box.id} value={box.id}>{selectedPayboxId === String(box.id) ? box.id : box.name}</option>
                 ))}
               </select>
 
@@ -391,6 +421,7 @@ function App() {
                 className='card-list'
                 value={selectedWarehouse?.id || ''}
                 onChange={(e) => {
+                  setSelectedWarehouseId(e.target.value);
                   const wh = warehouses.find(w => w.id === parseInt(e.target.value));
                   setSelectedWarehouse(wh);
                 }}
@@ -398,7 +429,7 @@ function App() {
               >
                 <option value="">Выберите склад</option>
                 {warehouses.map(wh => (
-                  <option key={wh.id} value={wh.id}>{wh.name}</option>
+                  <option key={wh.id} value={wh.id}> {selectedWarehouseId === String(wh.id) ? wh.id : wh.name}</option>
                 ))}
               </select>
 
@@ -407,6 +438,7 @@ function App() {
                 className='card-list'
                 value={selectedPriceType?.id || ''}
                 onChange={(e) => {
+                  setSelectedPriceTypeId(e.target.value);
                   const pt = priceType.find(p => p.id === parseInt(e.target.value));
                   setSelectedPriceType(pt);
                 }}
@@ -414,7 +446,7 @@ function App() {
               >
                 <option value="">Выберите тип цены</option>
                 {priceType.map(pt => (
-                  <option key={pt.id} value={pt.id}>{pt.name}</option>
+                  <option key={pt.id} value={pt.id}>{selectedPriceTypeId === String(pt.id) ? pt.id : pt.name}</option>
                 ))}
               </select>
             </div>
