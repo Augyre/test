@@ -37,6 +37,8 @@ function App() {
   const [selectedWarehouseId, setSelectedWarehouseId] = useState('');
   const [selectedPriceTypeId, setSelectedPriceTypeId] = useState('');
 
+  const [filteredProducts, setFilteredProducts] = useState([]);
+
   const handleConnect = async () => {
     if (!token) {
       alert('Введите токен');
@@ -126,19 +128,19 @@ function App() {
     const inputValue = e.target.value;
     setProductSearch(inputValue);
 
+    const nomenclatureArray = Array.isArray(nomenclature) ? nomenclature : [];
+
     if (inputValue.length < 2) {
-      setProductResults([]);
+      setFilteredProducts([]);
       setShowDropdown(false);
       return;
     }
-
-    const nomenclatureArray = Array.isArray(nomenclature) ? nomenclature : [];
 
     const filtered = nomenclatureArray.filter((product) => {
       return product.name?.toLowerCase().includes(inputValue.toLowerCase());
     });
 
-    setProductResults(filtered.slice(0, 10));
+    setFilteredProducts(filtered.slice(0, 20));
     setShowDropdown(true);
   };
 
@@ -491,10 +493,12 @@ function App() {
 
               <div className='product-content'>
                 <div className='product-cards'>
-                  {nomenclature.length === 0 ? (
-                    <div className="gray">Товары не найдены</div>
+                  {!isConnected ? (
+                    <div className="gray">Подключите кассу для загрузки товаров</div>
+                  ) : nomenclature.length === 0 ? (
+                    <div className="gray">Загрузка товаров...</div>
                   ) : (
-                    nomenclature.map(product => (
+                    (productSearch.length >= 2 ? filteredProducts : nomenclature.slice(0, 20)).map(product => (
                       <div
                         key={product.id}
                         className="product-card__item"
@@ -513,12 +517,18 @@ function App() {
                             addToCart(product);
                           }}
                         >
-                          <p className='font-medium'>Добавить</p>
+                          Добавить
                         </button>
                       </div>
                     ))
                   )}
                 </div>
+
+                {productSearch.length >= 2 && filteredProducts.length === 0 && (
+                  <div className="gray no-items">
+                    Товары не найдены
+                  </div>
+                )}
               </div>
             </div>
           </div>
