@@ -639,6 +639,75 @@ select.card-list:focus {
   opacity: 0.9;
 }
 
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: start;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  margin-top: 17px;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  min-width: 280px;
+  max-width: 90%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.modal-header h3 {
+  color: #4caf50;
+}
+
+.modal-body {
+  text-align: start;
+  margin: 20px 45px;
+}
+
+.modal-body p {
+  margin: 8px 0;
+  font-size: 16px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: center;
+}
+
+.modal-btn {
+  background-color: #ff9800;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 24px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.modal-btn:hover {
+  background-color: #e68900;
+}
+
+.modal-btn.error-btn {
+  background-color: #f44336;
+}
+
+.modal-btn.error-btn:hover {
+  background-color: #d32f2f;
+}
+
+
 @media (max-width: 480px) {
   .container {
     padding: 12px;

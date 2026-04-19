@@ -39,6 +39,28 @@ function App() {
 
   const [filteredProducts, setFilteredProducts] = useState([]);
 
+  const [showModal, setShowModal] = useState(false);
+  const [modalData, setModalData] = useState({ id: '', sum: '' });
+
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  let timerId = null;
+
+  const showError = (message) => {
+    setErrorMessage(message);
+    setShowErrorModal(true);
+
+    if (timerId) {
+      clearTimeout(timerId);
+    }
+
+    timerId = setTimeout(() => {
+      setShowErrorModal(false);
+      timerId = null;
+    }, 3000);
+  };
+
   const handleConnect = async () => {
     if (!token) {
       alert('Введите токен');
@@ -145,7 +167,7 @@ function App() {
   };
 
   const addToCart = (product) => {
-    const productPrice = product.price || product.sale_price || 1;
+    const productPrice = product.price || product.sale_price || 0;
     const existingItem = cart.find(item => item.id === product.id);
     if (existingItem) {
       setCart(cart.map(item =>
@@ -189,17 +211,42 @@ function App() {
 
   const createOrder = async (conduct = false) => {
     if (!api) {
-      alert('Сначала подключите кассу');
+      showError('Сначала подключите кассу');
+      return;
+    }
+
+    if (!selectedClient) {
+      showError('Выберите клиента');
+      return;
+    }
+
+    if (!selectedOrganization) {
+      showError('Выберите организацию');
+      return;
+    }
+
+    if (!selectedPaybox) {
+      showError('Выберите Счет');
+      return;
+    }
+
+    if (!selectedWarehouse) {
+      showError('Выберите Склад');
+      return;
+    }
+
+    if (!selectedPriceType) {
+      showError('Выберите тип цены');
+      return;
+    }
+
+    if (!searchPhoneInput) {
+      showError('Введите номер телефона');
       return;
     }
 
     if (cart.length === 0) {
-      alert('Добавьте хотя бы один товар');
-      return;
-    }
-
-    if (!selectedOrganization || !selectedWarehouse) {
-      alert('Выберите организацию и склад');
+      showError('Добавьте хотя бы один товар');
       return;
     }
 
@@ -229,12 +276,47 @@ function App() {
 
       const result = await api.createSale(requestBody);
 
-      alert(
-        `${conduct ? 'Продажа создана и проведена!' : 'Продажа создана!'}\n\n` +
-        `ID заказа: ${String(orderData.dated).slice(-6)}\n` +
-        `Сумма: ${Number(orderSum).toFixed(2)} ₽`
-      );
+      setModalData({
+        id: String(orderData.dated).slice(-6),
+        sum: Number(orderSum).toFixed(2)
+      });
 
+      setShowModal(true);
+
+      setTimeout(() => {
+        setShowModal(false);
+      }, 5000);
+
+      const resetAllStates = () => {
+        setIsConnected(false);
+        setApi(null);
+
+        setSelectedClient(null);
+        setSelectedOrganization(null);
+        setSelectedPaybox(null);
+        setSelectedWarehouse(null);
+        setSelectedPriceType(null);
+
+        setSelectedOrganizationId('');
+        setSelectedPayboxId('');
+        setSelectedWarehouseId('');
+        setSelectedPriceTypeId('');
+
+        setCart([]);
+        setComment('');
+
+        setSearchPhone('');
+        setSearchPhoneInput('');
+        setSearchResults([]);
+
+        setProductSearch('');
+        setProductResults([]);
+        setShowDropdown(false);
+        setFilteredProducts([]);
+      };
+
+
+      resetAllStates()
       setCart([]);
       setComment('');
       setSelectedClient(null);
@@ -348,8 +430,7 @@ function App() {
                 {selectedClient ? (
                   <div className="selected-client">
                     <div>
-                      <div className="client-name">{selectedClient.name || 'Без имени'}</div>
-                      <div className="client-phone">{selectedClient.phone || 'Нет телефона'}</div>
+                      <div className="client-name">{selectedClient.id || 'Без имени'}</div>
                     </div>
                     <button onClick={() => {
                       setSelectedClient(null);
@@ -362,7 +443,6 @@ function App() {
                     {searchResults.map(client => (
                       <div key={client.id} className="search-result-item" onClick={() => selectClient(client)}>
                         <div className="client-name">{client.name || 'Без имени'}</div>
-                        <div className="client-phone">{client.phone || 'Нет телефона'}</div>
                       </div>
                     ))}
                   </div>
@@ -629,6 +709,35 @@ function App() {
           </button>
         </div>
       </div>
+
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Продажа создана!</h3>
+            </div>
+            <div className="modal-body">
+              <p>ID заказа: {modalData.id}</p>
+              <p>Сумма: {modalData.sum} ₽</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showErrorModal && (
+        <div className="modal-overlay" onClick={() => setShowErrorModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-body">
+              <p style={{ whiteSpace: 'pre-line' }}>{errorMessage}</p>
+            </div>
+            <div className="modal-footer">
+              <button className="modal-btn error-btn" onClick={() => setShowErrorModal(false)}>
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
