@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import './App.css'
 
 function App() {
-  const [token, setToken] = useState('');
+  const [token, setToken] = useState('af1874616430e04cfd4bce30035789907e899fc7c3a1a4bb27254828ff304a77');
   const [api, setApi] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -41,7 +41,6 @@ function App() {
       const apiInstance = new TableApi(token);
       setApi(apiInstance);
 
-
       const clientsData = await apiInstance.getClients();
       const warehousesData = await apiInstance.getWarehouses();
       const pboxesData = await apiInstance.getPboxes();
@@ -55,8 +54,6 @@ function App() {
       const organizationsArray = organizationsData.result;
       const priceTypeArray = priceTypeData.result;
       const nomenclatureArray = nomenclatureData.result;
-
-      const filteredOrgs = organizationsArray.filter(v => v.full_name !== null);
 
       setClients(clientsArray);
       setWarehouses(warehousesArray);
@@ -243,7 +240,6 @@ function App() {
     }
   };
 
-
   return (
     <>
       <div className='container'>
@@ -282,7 +278,7 @@ function App() {
                 type="text"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
-                placeholder="Введите токен API"
+                placeholder="Введите token кассы"
                 disabled={isConnected}
               />
               <button
@@ -459,6 +455,38 @@ function App() {
                     ))}
                   </div>
                 )}
+              </div>
+
+              <div className='product-content'>
+                <div className='product-cards'>
+                  {nomenclature.length === 0 ? (
+                    <div className="gray">Товары не найдены</div>
+                  ) : (
+                    nomenclature.map(product => (
+                      <div
+                        key={product.id}
+                        className="product-card__item"
+                        onClick={() => addToCart(product)}
+                      >
+                        <div className='item-desc'>
+                          <p className='product-name'>{product.name}</p>
+                          <p className='product-price'>
+                            {product.price ? `${product.price.toLocaleString()} ₽` : 'цена не указана'}
+                          </p>
+                        </div>
+                        <button
+                          className='item-buy'
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            addToCart(product);
+                          }}
+                        >
+                          <p className='font-medium'>Добавить</p>
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
           </div>
